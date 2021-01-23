@@ -1,0 +1,9 @@
+[workspace]
+
+members = [
+    "mock",
+    "stat",
+    "mock-server",
+    "mock-client",
+    "bench-client",
+]

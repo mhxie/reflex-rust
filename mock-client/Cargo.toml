@@ -1,0 +1,13 @@
+[package]
+name = "mock-client"
+version = "0.1.0"
+authors = ["Minghao Xie <mhxie@ucsc.edu>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+getopts = "0"
+
+mock = { path = "../mock" }
