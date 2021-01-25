@@ -80,8 +80,8 @@ pub async fn pressure_ec2(
 
         tokio::spawn(async move {
             let mut sum = Count::default();
-            let out_buf: Vec<u8> = vec![0; 4096];
-            let mut in_buf: Vec<u8> = vec![0; 4096];
+            let out_buf: Vec<u8> = vec![0; 8192];
+            let mut in_buf: Vec<u8> = vec![0; 8192];
             let mut latency: Vec<Duration> = Vec::new();
 
             // Open a TCP stream to the socket address.
@@ -170,7 +170,7 @@ pub async fn pressure_ec2(
         print!("| {}th-{:?} |", pt, lats[i]);
     }
     println!();
-    let avg = average(&mut latency);
+    let avg = average(&latency);
     println!("Average latency: {:?}", avg);
     println!();
     println!(
@@ -302,7 +302,7 @@ pub async fn pressure_multi_ec2(
         lats[i] = percentile(*pt, &latency).as_micros() as u32;
     }
 
-    let avg = average(&mut latency);
+    let avg = average(&latency);
     println!("Average: {:?}", avg);
     let perf = Perf {
         iops: qps,

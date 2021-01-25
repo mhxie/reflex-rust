@@ -20,7 +20,7 @@ fn print_usage(program: &str, opts: &getopts::Options) {
         r#"Echo benchmark.
 
 Usage:
-  {program} [ -a <address> ] [ -l <length> ] [ -c <number> ] [ -t <duration> ]
+  {program} [ -a <address> ] [ -l <length> ] [ -c <number> ] [ -t <duration> ] [ -r <rw_ratio> ]
   {program} (-h | --help)
   {program} --version"#,
         program = program
@@ -60,6 +60,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "<number>",
     );
 
+    opts.optopt(
+        "r",
+        "rw_ratio",
+        "Read write ratio from 0 to 100. Default: 100",
+        "<rw_ratio>",
+    );
+
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
         Err(e) => {
@@ -80,10 +87,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .parse::<usize>()
         .unwrap_or(1024);
 
-    if length > 4096 {
-        println!("Please specify packet size equal or smaller than 4096 bytes.");
-        return Ok(());
-    }
+    // if length > 4096 {
+    //     println!("Please specify packet size equal or smaller than 4096 bytes.");
+    //     return Ok(());
+    // }
 
     let duration = matches
         .opt_str("duration")
@@ -102,7 +109,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // .unwrap();
 
     let rw_ratio = matches
-        .opt_str("rw")
+        .opt_str("rw_ratio")
         .unwrap_or_default()
         .parse::<u32>()
         .unwrap_or(100);
