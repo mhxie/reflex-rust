@@ -2,7 +2,7 @@
 
 if [ -z "$1" ]
 then
-    echo "Please specify the number of lambdas to run"
+    echo "Please specify the number of lambdas to invoke"
 else
     let count=$1-1
     for LAMBDAID in $(seq 0 $count)
