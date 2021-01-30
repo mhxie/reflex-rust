@@ -22,7 +22,7 @@ pub async fn echo_server(addr: &str) -> Result<(), Box<dyn Error>> {
         let (mut socket, _) = listener.accept().await?;
 
         tokio::spawn(async move {
-            let mut buf = vec![0; 4096];
+            let mut buf = vec![0; 32768];
 
             // In a loop, read data from the socket and write the data back.
             loop {
@@ -83,6 +83,7 @@ pub async fn pressure_ec2(
             let out_buf: Vec<u8> = vec![0; 8192];
             let mut in_buf: Vec<u8> = vec![0; 8192];
             let mut latency: Vec<Duration> = Vec::new();
+            // let mut stop = false;
 
             // Open a TCP stream to the socket address.
             let socket = TcpSocket::new_v4().unwrap();
@@ -90,12 +91,25 @@ pub async fn pressure_ec2(
 
             let start = Instant::now();
             let mut to_send = length;
+            let mut to_recv = length;
+            let mut mock_mode = false;
+            if length == 24 || length == 1048 {
+                mock_mode = true;
+            }
             loop {
                 let rtt;
                 let last_t = Instant::now();
-                if rand::thread_rng().gen_range(0..100) > rw_ratio {
-                    to_send = 24;
+                if mock_mode {
+                    if rand::thread_rng().gen_range(0..100) > rw_ratio {
+                        to_send = 24;
+                        to_recv = 1048;
+                    } else {
+                        to_send = 1048;
+                        to_recv = 24;
+                    }
                 }
+
+                // if !stop {
                 match stream.write_all(&out_buf[0..to_send]).await {
                     Ok(_) => {
                         sum.send += 1;
@@ -106,24 +120,34 @@ pub async fn pressure_ec2(
                         break;
                     }
                 };
+                // }
 
-                match stream.read(&mut in_buf).await {
+                // if sum.recv_bytes < sum.send_bytes {
+                // match stream.read(&mut in_buf).await {
+                match stream.read_exact(&mut in_buf[0..to_recv]).await {
                     Ok(n) => {
                         sum.recv += 1;
                         sum.recv_bytes += n as u64;
                         rtt = last_t.elapsed();
                     }
-                    Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
-                        continue;
-                    }
+                    // Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+                    //     continue;
+                    // }
                     Err(_) => {
                         println!("Read error!");
                         break;
                     }
                 };
                 latency.push(rtt);
+                // } else if sum.recv_bytes == sum.send_bytes {
+                //     if stop {
+                //         break;
+                //     }
+                // }
+
                 let elapsed = start.elapsed();
                 if elapsed > totltime {
+                    // stop = true;
                     // println!("Done benchamarking for task-{}", i);
                     break;
                 }
@@ -214,8 +238,8 @@ pub async fn pressure_multi_ec2(
 
             tokio::spawn(async move {
                 let mut sum = Count::default();
-                let out_buf: Vec<u8> = vec![0; 8192];
-                let mut in_buf: Vec<u8> = vec![0; 8192];
+                let out_buf: Vec<u8> = vec![0; 16384];
+                let mut in_buf: Vec<u8> = vec![0; 16384];
                 let mut latency: Vec<Duration> = Vec::new();
 
                 // Open a TCP stream to the socket address.

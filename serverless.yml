@@ -15,15 +15,10 @@ provider:
   name: aws
   runtime: rust
   memorySize: 256
-  timeout: 42
-# you can overwrite defaults here
+  timeout: 70
+  # you can overwrite defaults here
   stage: dev
   region: us-west-2
-  vpc:
-    securityGroupIds:
-      - ${env:SECURITY_GROUP_ID}
-    subnetIds:
-      - ${env:SUBNET_ID}
 
 # you can add statements to the Lambda function's IAM Role here
 # iamRoleStatements:
@@ -65,39 +60,24 @@ plugins:
   - serverless-rust
 
 functions:
+  # handler value syntax is `{cargo-package-name}.{bin-name}`
+  # or `{cargo-package-name}` for short when you are building a
+  # default bin for a given package.
   rust-cli:
-    # handler value syntax is `{cargo-package-name}.{bin-name}`
-    # or `{cargo-package-name}` for short when you are building a
-    # default bin for a given package.
     handler: bench-client
-#    The following are a few example events you can configure
-#    NOTE: Please make sure to change your handler code to work with those events
-#    Check the event documentation for details
-#    events:
-#      - http:
-#          path: users/create
-#          method: get
-#      - s3: ${env:BUCKET}
-#      - schedule: rate(10 minutes)
-#      - sns: greeter-topic
-#      - stream: arn:aws:dynamodb:region:XXXXXX:table/foo/stream/1970-01-01T00:00:00.000
-#      - alexaSkill: amzn1.ask.skill.xx-xx-xx-xx
-#      - alexaSmartHome: amzn1.ask.skill.xx-xx-xx-xx
-#      - iot:
-#          sql: "SELECT * FROM 'some_topic'"
-#      - cloudwatchEvent:
-#          event:
-#            source:
-#              - "aws.ec2"
-#            detail-type:
-#              - "EC2 Instance State-change Notification"
-#            detail:
-#              state:
-#                - pending
-#      - cloudwatchLog: '/aws/lambda/hello'
-#      - cognitoUserPool:
-#          pool: MyUserPool
-#          trigger: PreSignUp
+    vpc:
+      securityGroupIds:
+        - ${env:SECURITY_GROUP_ID}
+      subnetIds:
+        - ${env:SUBNET_ID}
+
+  # rust-cli-x:
+  #   handler: bench-client
+  #   vpc:
+  #     securityGroupIds:
+  #       - ${env:SECURITY_GROUP_ID_x}
+  #     subnetIds:
+  #       - ${env:SUBNET_ID_x}
 
 #    Define function environment variables here
 #    environment:
@@ -121,6 +101,6 @@ custom:
     # flags passed to cargo
     # cargoFlags: '--features enable-awesome'
     # custom docker tag
-    dockerTag: '0.3.0-rust-1.45.0'
+    dockerTag: "0.3.0-rust-1.45.0"
     #  custom docker image
-    dockerImage: 'softprops/lambda-rust'
+    dockerImage: "softprops/lambda-rust"

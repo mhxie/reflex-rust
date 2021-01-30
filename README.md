@@ -19,6 +19,7 @@ ReFlex-Rust is consist of server and client rust implementations for benchmarkin
     cargo run --release -p mock-client
     cargo run --release -p mock-client -- --help
     cargo run --release -p mock-client -- --address "127.0.0.1:25000" --number 1000 --duration 60 --length 1024
+    cargo run --release -p mock-client -- --address "127.0.0.1:25000" --number 1 --duration 10 --length 1024
 
 ## Go Serverless
 
@@ -34,7 +35,7 @@ ReFlex-Rust is consist of server and client rust implementations for benchmarkin
 
     # Test your invocation and have fun
     npx serverless invoke -f rust-cli -d '{
-        "addr":"10.0.1.211:25000",
+        "addr":"10.0.1.208:25000",
         "duration":10,
         "number":1,
         "length": 1024,
@@ -42,7 +43,7 @@ ReFlex-Rust is consist of server and client rust implementations for benchmarkin
 
 ## References
 
-* https://github.com/haraldh/rust_echo_bench
-* https://github.com/tokio-rs/tokio
-* https://github.com/awslabs/aws-lambda-rust-runtime
-* https://www.serverless.com/plugins/serverless-rust
+- https://github.com/haraldh/rust_echo_bench
+- https://github.com/tokio-rs/tokio
+- https://github.com/awslabs/aws-lambda-rust-runtime
+- https://www.serverless.com/plugins/serverless-rust
