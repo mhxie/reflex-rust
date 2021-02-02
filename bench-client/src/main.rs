@@ -1,5 +1,6 @@
 use netlify_lambda::{handler_fn, Context};
 use serde_json::Value;
+use aws_lambda_events::event::sqs::SqsEvent;
 
 // use mock::hello_ec2;
 use mock::pressure_ec2;
@@ -13,10 +14,18 @@ async fn main() -> Result<(), Error> {
     Ok(())
 }
 
-async fn handler(event: serde_json::Value, _: Context) -> Result<Value, Error> {
+// async fn handler(event: serde_json::Value, _: Context) -> Result<Value, Error> {
+async fn handler(event: SqsEvent, _: Context) -> Result<Value, Error> {
     println!("We got event: {:?}", event);
-    let args: Args = serde_json::from_value(event).unwrap();
-    println!("We got args: {:?}", args);
+    let mut args = Args::default();
+    // let args: Args = serde_json::from_value(event).unwrap();
+    for record in event.records {
+        if let Some(body) = record.body {
+            args = serde_json::from_str(&body).unwrap();
+            println!("We got args: {:?}", args);
+        }
+    }
+    // println!("We got args: {:?}", args);
     // let res = match hello_ec2(args.addr.as_str()).await {
     //     Ok(true) => Perf::default(),
     //     Ok(false) => return Err("Unable to say hello".into()),
