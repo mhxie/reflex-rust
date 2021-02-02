@@ -14,6 +14,7 @@ async fn main() -> Result<(), Error> {
 }
 
 async fn handler(event: serde_json::Value, _: Context) -> Result<Value, Error> {
+    println!("We got event: {:?}", event);
     let args: Args = serde_json::from_value(event).unwrap();
     println!("We got args: {:?}", args);
     // let res = match hello_ec2(args.addr.as_str()).await {

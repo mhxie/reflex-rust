@@ -30,6 +30,7 @@ ReFlex-Rust is consist of server and client rust implementations for benchmarkin
 
     # Try the serverless demo with the plugin serverless-rust
     docker pull softprops/lambda-rust:latest # 0.3.0-rust-1.45.0
+    npm i
     npm ci
     npx serverless deploy
 

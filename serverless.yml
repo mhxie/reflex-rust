@@ -21,27 +21,18 @@ provider:
   region: us-west-2
 
 # you can add statements to the Lambda function's IAM Role here
-# iamRoleStatements:
-#   - Effect: Allow
-#     Action:
-#       - ec2:CreateNetworkInterface
-#       - ec2:DescribeNetworkInterfaces
-#       - ec2:DeleteNetworkInterface
-#     Resource:
-#       - 'arn:aws:ec2:us-west-2:*:*'
-#   - Effect: "Allow"
-#     Action:
-#       - "s3:ListBucket"
-#     Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
-#   - Effect: "Allow"
-#     Action:
-#       - "s3:PutObject"
-#     Resource:
-#       Fn::Join:
-#         - ""
-#         - - "arn:aws:s3:::"
-#           - "Ref" : "ServerlessDeploymentBucket"
-#           - "/*"
+  # iamRoleStatements:
+  #   - Effect: "Allow"
+  #     Action:
+  #       - "sqs:SendMessage"
+  #     Resource: [] # specify the queues of lamdbas to operate
+  #   - Effect: Allow
+  #     Action:
+  #       - ec2:CreateNetworkInterface
+  #       - ec2:DescribeNetworkInterfaces
+  #       - ec2:DeleteNetworkInterface
+  #     Resource:
+  #       - 'arn:aws:ec2:us-west-2:*:*'
 
 # you can define service wide environment variables here
 #  environment:
@@ -65,11 +56,16 @@ functions:
   # default bin for a given package.
   rust-cli:
     handler: bench-client
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt: [SQSQueue, Arn]
     vpc:
       securityGroupIds:
         - ${env:SECURITY_GROUP_ID}
       subnetIds:
         - ${env:SUBNET_ID}
+    # provisionedConcurrency: 512
 
   # rust-cli-x:
   #   handler: bench-client
@@ -83,17 +79,36 @@ functions:
 #    environment:
 #      variable2: value2
 
-# you can add CloudFormation resource templates here
-#resources:
-#  Resources:
-#    NewResource:
-#      Type: AWS::S3::Bucket
-#      Properties:
-#        BucketName: my-new-bucket
-#  Outputs:
-#     NewOutput:
-#       Description: "Description for the output"
-#       Value: "Some output value"
+resources:
+  Resources:
+    SQSQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: "${self:service}-sqs"
+        VisibilityTimeout: 90 # needs to be larger than the function timout
+        MessageRetentionPeriod: 150 # in seconds
+        RedrivePolicy:
+          deadLetterTargetArn:
+            Fn::GetAtt: [DLQueue, Arn]
+          maxReceiveCount: 1
+    DLQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "${self:service}-dlq"
+        MessageRetentionPeriod: 150
+
+  Outputs:
+    SQSQueueUrl:
+      Value:
+        Ref: SQSQueue
+      Export:
+        Name: "${self:service}-sqs-url"
+    SQSQueueArn:
+      Value:
+        Fn::GetAtt: [SQSQueue, Arn]
+      Export:
+        Name: "${self:service}-sqs-arn"
+
 custom:
   # this section customizes of the default
   # serverless-rust plugin settings

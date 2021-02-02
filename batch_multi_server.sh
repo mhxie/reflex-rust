@@ -21,7 +21,7 @@ else
     for LAMBDAID in $(seq 0 $count)
     do
         let i=($LAMBDAID % ${#addrs[@]})
-        echo "running ${LAMBDAID} lambda invocation to ${addrs[$i]}:25000"
+        # echo "running ${LAMBDAID} lambda invocation to ${addrs[$i]}:25000"
         json_i=`echo "$json" | sed "s/ip/${addrs[$i]}/"`
         # echo "sending $json_i"
         npx serverless invoke -f rust-cli -d "$json_i" > res/${LAMBDAID}.json &
