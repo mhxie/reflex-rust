@@ -29,6 +29,18 @@ pub struct Args {
     pub rw_ratio: u32,
 }
 
+impl Default for Args {
+    fn default() -> Args {
+        Args {
+            addr: String::default(),
+            duration: 0,
+            number: 0,
+            length: 0,
+            rw_ratio: 100,
+        }
+    }
+}
+
 #[derive(Serialize, Debug)]
 pub struct Perf {
     pub iops: u64,

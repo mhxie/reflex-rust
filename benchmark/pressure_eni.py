@@ -67,10 +67,10 @@ async def batch_invoke_sqs(num):
                 MessageBody=body
             )
             tasks.append(task)
-        # start = time.time()
-        # rets = await asyncio.gather(*tasks)
-        # elapsed = time.time() - start
-        # print(f"Total elapsed time is {elapsed:.2f} seconds.")
+        start = time.time()
+        rets = await asyncio.gather(*tasks)
+        elapsed = time.time() - start
+        print(f"Total elapsed time is {elapsed:.2f} seconds.")
 
 if len(sys.argv) > 1:
     # asyncio.run(batch_invoke(int(sys.argv[1])))
