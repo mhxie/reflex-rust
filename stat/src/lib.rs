@@ -36,7 +36,7 @@ impl Default for Args {
             duration: 0,
             number: 0,
             length: 0,
-            rw_ratio: 100
+            rw_ratio: 100,
         }
     }
 }
