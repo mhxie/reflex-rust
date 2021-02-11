@@ -4,7 +4,7 @@ use std::time::Duration;
 #[derive(Debug)]
 pub struct Count {
     pub send: u64,
-    pub recv: u64,
+    pub recv: u64, 
     pub send_bytes: u64,
     pub recv_bytes: u64,
 }
@@ -23,6 +23,7 @@ impl Default for Count {
 #[derive(Deserialize, Debug)]
 pub struct Args {
     pub addr: String,
+    pub start: u64,
     pub duration: u64,
     pub number: u32,
     pub length: usize,
@@ -33,10 +34,11 @@ impl Default for Args {
     fn default() -> Args {
         Args {
             addr: String::default(),
+            start: 0,
             duration: 0,
             number: 0,
             length: 0,
-            rw_ratio: 100,
+            rw_ratio: 100
         }
     }
 }

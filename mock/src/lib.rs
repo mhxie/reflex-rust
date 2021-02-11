@@ -61,6 +61,7 @@ pub async fn hello_ec2(addr: &str) -> Result<bool, Box<dyn Error>> {
 
 pub async fn pressure_ec2(
     address: &str,
+    start: u64,
     duration: u64,
     conns: u32,
     length: usize,
@@ -89,7 +90,9 @@ pub async fn pressure_ec2(
             let socket = TcpSocket::new_v4().unwrap();
             let mut stream = socket.connect(addr).await.unwrap();
 
-            let start = Instant::now();
+            let initial = Instant::now();
+            let fstart = start as f64;
+            let mut measure = false;
             let mut to_send = length;
             let mut to_recv = length;
             let mut mock_mode = false;
@@ -97,7 +100,7 @@ pub async fn pressure_ec2(
                 mock_mode = true;
             }
             loop {
-                let rtt;
+                // let rtt;
                 let last_t = Instant::now();
                 if mock_mode {
                     if rand::thread_rng().gen_range(0..100) > rw_ratio {
@@ -108,12 +111,17 @@ pub async fn pressure_ec2(
                         to_recv = 24;
                     }
                 }
+                if !measure && initial.elapsed().as_secs_f64() > fstart {
+                    measure = true;
+                }
 
                 // if !stop {
                 match stream.write_all(&out_buf[0..to_send]).await {
                     Ok(_) => {
-                        sum.send += 1;
-                        sum.send_bytes += to_send as u64;
+                        if measure {
+                            sum.send += 1;
+                            sum.send_bytes += to_send as u64;
+                        }
                     }
                     Err(_) => {
                         println!("Write error!");
@@ -126,9 +134,11 @@ pub async fn pressure_ec2(
                 // match stream.read(&mut in_buf).await {
                 match stream.read_exact(&mut in_buf[0..to_recv]).await {
                     Ok(n) => {
-                        sum.recv += 1;
-                        sum.recv_bytes += n as u64;
-                        rtt = last_t.elapsed();
+                        if measure {
+                            sum.recv += 1;
+                            sum.recv_bytes += n as u64;
+                            latency.push(last_t.elapsed());
+                        }
                     }
                     // Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
                     //     continue;
@@ -138,14 +148,14 @@ pub async fn pressure_ec2(
                         break;
                     }
                 };
-                latency.push(rtt);
+                
                 // } else if sum.recv_bytes == sum.send_bytes {
                 //     if stop {
                 //         break;
                 //     }
                 // }
 
-                let elapsed = start.elapsed();
+                let elapsed = initial.elapsed();
                 if elapsed > totltime {
                     // stop = true;
                     // println!("Done benchamarking for task-{}", i);
@@ -217,6 +227,7 @@ pub async fn pressure_ec2(
     Ok(perf)
 }
 
+// TODO: wrap pressure_ec2 in this function
 pub async fn pressure_multi_ec2(
     addresses: &[String],
     duration: u64,

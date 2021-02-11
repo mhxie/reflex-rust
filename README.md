@@ -37,10 +37,15 @@ ReFlex-Rust is consist of server and client rust implementations for benchmarkin
     # Test your invocation and have fun
     npx serverless invoke -f rust-cli -d '{
         "addr":"10.0.1.208:25000",
+        "start": 0,
         "duration":10,
         "number":1,
         "length": 1024,
         "rw_ratio": 100}'
+
+## Benchmark
+
+Use this repo [reflex-bench](https://github.com/mhxie/reflex-bench)
 
 ## References
 

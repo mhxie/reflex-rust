@@ -15,7 +15,7 @@ provider:
   name: aws
   runtime: rust
   memorySize: 256
-  timeout: 70
+  timeout: 365
   # you can overwrite defaults here
   stage: dev
   region: us-west-2
