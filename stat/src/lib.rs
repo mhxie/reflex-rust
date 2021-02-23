@@ -23,7 +23,7 @@ impl Default for Count {
 #[derive(Deserialize, Debug)]
 pub struct Args {
     pub addr: String,
-    pub start: u64,
+    pub start: f64,
     pub duration: u64,
     pub number: u32,
     pub length: usize,
@@ -34,7 +34,7 @@ impl Default for Args {
     fn default() -> Args {
         Args {
             addr: String::default(),
-            start: 0,
+            start: 0.0,
             duration: 0,
             number: 0,
             length: 0,
@@ -66,7 +66,7 @@ impl Default for Perf {
 }
 
 pub fn percentile(n: usize, latency: &[Duration]) -> Duration {
-    if n > 100 {
+    if n > 100 || latency.len() == 0 {
         println!("Cannot calculate {}-percentile", n);
         Duration::default();
     }

@@ -13,37 +13,53 @@ use tokio::sync::mpsc;
 
 use stat::{average, percentile, Count, Perf};
 
+fn handle_disconnect(start: Instant, tot_recv: u64, tot_resp: u64) {
+    let duration = start.elapsed();
+    println!("Recv bandwidth: {}Mbps", tot_recv / duration.as_secs() / 1024 / 128);
+    println!("Resp bandwidth: {}Mbps", tot_resp / duration.as_secs() / 1024 / 128);
+}
+
 pub async fn echo_server(addr: &str) -> Result<(), Box<dyn Error>> {
     let listener = TcpListener::bind(&addr).await?;
     println!("Listening on: {}", addr);
+    let mut conn_count = 0;
 
     loop {
         // Asynchronously wait for an inbound socket.
         let (mut socket, _) = listener.accept().await?;
+        println!("Conn-{} started", conn_count);
 
         tokio::spawn(async move {
-            let mut buf = vec![0; 32768];
+            let mut buf = vec![0; 8096];
+            let mut tot_recv: u64 = 0;
+            let mut tot_resp: u64 = 0;
+            let start = Instant::now();
 
             // In a loop, read data from the socket and write the data back.
             loop {
                 let n = socket
                     .read(&mut buf)
-                    .await
-                    .expect("failed to read data from socket");
+                    .await.expect("failed to read data from socket");
+                tot_recv += n as u64;
 
                 let resp = match n {
-                    0 => return,
+                    0 => {
+                        println!("Conn-{} ended", conn_count);
+                        handle_disconnect(start, tot_recv, tot_resp);
+                        return
+                    },
                     24 => 1048,
                     1048 => 24,
-                    _ => n,
+                    _ => n
                 };
 
-                socket
-                    .write_all(&buf[0..resp])
-                    .await
-                    .expect("failed to write data to socket");
+                match socket.write_all(&buf[0..resp]).await {
+                    Ok(_) => tot_resp += resp as u64,
+                    Err(_) => println!("failed to write data to socket")      
+                };
             }
         });
+        conn_count += 1;
     }
 }
 
@@ -61,7 +77,7 @@ pub async fn hello_ec2(addr: &str) -> Result<bool, Box<dyn Error>> {
 
 pub async fn pressure_ec2(
     address: &str,
-    start: u64,
+    start: f64,
     duration: u64,
     conns: u32,
     length: usize,
@@ -72,7 +88,7 @@ pub async fn pressure_ec2(
     let totltime = Duration::from_secs(duration);
     let (tx, mut rx) = mpsc::channel(32);
     let (ltx, mut lrx) = mpsc::channel(4096);
-    let addr = address.parse().expect("Unable to part server address");
+    let addr = address.parse().expect("Unable to parse server address");
 
     for i in 0..conns {
         // created for each tasks
@@ -91,7 +107,6 @@ pub async fn pressure_ec2(
             let mut stream = socket.connect(addr).await.unwrap();
 
             let initial = Instant::now();
-            let fstart = start as f64;
             let mut measure = false;
             let mut to_send = length;
             let mut to_recv = length;
@@ -111,7 +126,7 @@ pub async fn pressure_ec2(
                         to_recv = 24;
                     }
                 }
-                if !measure && initial.elapsed().as_secs_f64() > fstart {
+                if !measure && initial.elapsed().as_secs_f64() > start {
                     measure = true;
                 }
 
@@ -224,6 +239,7 @@ pub async fn pressure_ec2(
         p95: lats[2],
         p99: lats[3],
     };
+    println!("{:?}", perf);
     Ok(perf)
 }
 

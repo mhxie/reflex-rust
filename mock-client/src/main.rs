@@ -50,7 +50,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     opts.optopt(
         "s",
         "start",
-        "Measurement start time in seconds. Default: 0",
+        "Measurement start time in seconds. Default: 0.0",
         "<start>",
     );
     opts.optopt(
@@ -100,8 +100,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let start = matches
         .opt_str("number")
         .unwrap_or_default()
-        .parse::<u64>()
-        .unwrap_or(0);
+        .parse::<f64>()
+        .unwrap_or(0.0);
     let duration = matches
         .opt_str("duration")
         .unwrap_or_default()

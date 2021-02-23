@@ -8,9 +8,10 @@ else
     for LAMBDAID in $(seq 0 $count)
     do
         echo "running ${LAMBDAID} lambda invocation"
-        npx serverless invoke -f rust-cli -d '{
-            "addr": "10.0.1.27:25000",
-            "duration": 30,
+        serverless invoke -f rust-cli -d '{
+            "addr": "10.0.1.208:25000",
+            "start": 0,
+            "duration": 20,
             "number": 1,
             "length": 4096,
             "rw_ratio": 100}' > res/${LAMBDAID}.json &
