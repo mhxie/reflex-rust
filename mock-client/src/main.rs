@@ -48,6 +48,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "<length>",
     );
     opts.optopt(
+        "s",
+        "start",
+        "Measurement start time in seconds. Default: 0.0",
+        "<start>",
+    );
+    opts.optopt(
         "t",
         "duration",
         "Test duration in seconds. Default: 10",
@@ -91,7 +97,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     //     println!("Please specify packet size equal or smaller than 4096 bytes.");
     //     return Ok(());
     // }
-
+    let start = matches
+        .opt_str("number")
+        .unwrap_or_default()
+        .parse::<f64>()
+        .unwrap_or(0.0);
     let duration = matches
         .opt_str("duration")
         .unwrap_or_default()
@@ -120,7 +130,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         number, length, address, duration
     );
 
-    pressure_ec2(address.as_str(), duration, number, length, rw_ratio).await?;
+    pressure_ec2(address.as_str(), start, duration, number, length, rw_ratio).await?;
 
     Ok(())
 }

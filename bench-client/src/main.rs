@@ -49,8 +49,10 @@ async fn handler(input: Value, _: Context) -> Result<Value, Error> {
     //     Ok(false) => return Err("Unable to say hello".into()),
     //     Err(_) => return Err("Unexpected error".into()),
     // };
+
     let res = pressure_ec2(
         args.addr.as_str(),
+        args.start,
         args.duration,
         args.number,
         args.length,

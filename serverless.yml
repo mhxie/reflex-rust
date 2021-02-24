@@ -14,8 +14,9 @@ service: reflex
 provider:
   name: aws
   runtime: rust
+  lambdaHashingVersion: 20201221
   memorySize: 256
-  timeout: 70
+  timeout: 65
   # you can overwrite defaults here
   stage: dev
   region: us-west-2
@@ -88,15 +89,15 @@ resources:
         QueueName: "${self:service}-sqs"
         VisibilityTimeout: 90 # needs to be larger than the function timout
         MessageRetentionPeriod: 360 # in seconds
-        RedrivePolicy:
-          deadLetterTargetArn:
-            Fn::GetAtt: [DLQueue, Arn]
-          maxReceiveCount: 1
-    DLQueue:
-      Type: "AWS::SQS::Queue"
-      Properties:
-        QueueName: "${self:service}-dlq"
-        MessageRetentionPeriod: 360
+    #     RedrivePolicy:
+    #       deadLetterTargetArn:
+    #         Fn::GetAtt: [DLQueue, Arn]
+    #       maxReceiveCount: 1
+    # DLQueue:
+    #   Type: "AWS::SQS::Queue"
+    #   Properties:
+    #     QueueName: "${self:service}-dlq"
+    #     MessageRetentionPeriod: 360
 
   Outputs:
     SQSQueueUrl:
