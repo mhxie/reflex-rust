@@ -4,7 +4,7 @@ use std::time::Duration;
 #[derive(Debug)]
 pub struct Count {
     pub send: u64,
-    pub recv: u64, 
+    pub recv: u64,
     pub send_bytes: u64,
     pub recv_bytes: u64,
 }
@@ -38,7 +38,7 @@ impl Default for Args {
             duration: 0,
             number: 0,
             length: 0,
-            rw_ratio: 100
+            rw_ratio: 100,
         }
     }
 }
@@ -66,7 +66,7 @@ impl Default for Perf {
 }
 
 pub fn percentile(n: usize, latency: &[Duration]) -> Duration {
-    if n > 100 || latency.len() == 0 {
+    if n > 100 || latency.is_empty() {
         println!("Cannot calculate {}-percentile", n);
         Duration::default();
     }

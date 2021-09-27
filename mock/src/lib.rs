@@ -15,8 +15,16 @@ use stat::{average, percentile, Count, Perf};
 
 fn handle_disconnect(start: Instant, tot_recv: u64, tot_resp: u64) {
     let duration = start.elapsed();
-    println!("Recv bandwidth: {}Mbps", tot_recv / duration.as_secs() / 1024 / 128);
-    println!("Resp bandwidth: {}Mbps", tot_resp / duration.as_secs() / 1024 / 128);
+    if duration.as_secs() != 0 {
+        println!(
+            "Recv bandwidth: {}Mbps",
+            tot_recv / duration.as_secs() / 1024 / 128
+        );
+        println!(
+            "Resp bandwidth: {}Mbps",
+            tot_resp / duration.as_secs() / 1024 / 128
+        );
+    }
 }
 
 pub async fn echo_server(addr: &str) -> Result<(), Box<dyn Error>> {
@@ -30,33 +38,63 @@ pub async fn echo_server(addr: &str) -> Result<(), Box<dyn Error>> {
         println!("Conn-{} started", conn_count);
 
         tokio::spawn(async move {
-            let mut buf = vec![0; 8096];
+            let mut buf = vec![0; 65536];
             let mut tot_recv: u64 = 0;
             let mut tot_resp: u64 = 0;
             let start = Instant::now();
+            let n = socket
+                .read(&mut buf)
+                .await
+                .expect("failed to read data from socket");
+            let to_recv: usize = match n {
+                // TODO: verify if log2(n) is integer
+                0 => {
+                    println!("Got unexpected initial msg.");
+                    0
+                }
+                _ => {
+                    println!("New conn configured to {} bytes.", n);
+                    n + 24
+                }
+            };
+            match socket.write_all(&buf[0..24]).await {
+                Ok(_) => println!("finished negotiation"),
+                Err(_) => println!("failed to write data to socket"),
+            };
 
             // In a loop, read data from the socket and write the data back.
             loop {
                 let n = socket
                     .read(&mut buf)
-                    .await.expect("failed to read data from socket");
+                    .await
+                    .expect("failed to read data from socket");
                 tot_recv += n as u64;
+                let mut num = 1;
 
                 let resp = match n {
                     0 => {
                         println!("Conn-{} ended", conn_count);
                         handle_disconnect(start, tot_recv, tot_resp);
-                        return
-                    },
-                    24 => 1048,
-                    1048 => 24,
-                    _ => n
+                        return;
+                    }
+                    h if h % 24 == 0 => {
+                        num = h / 24;
+                        to_recv
+                    }
+                    t if t == to_recv => 24,
+                    _ => n,
                 };
 
-                match socket.write_all(&buf[0..resp]).await {
-                    Ok(_) => tot_resp += resp as u64,
-                    Err(_) => println!("failed to write data to socket")      
-                };
+                while num != 0 {
+                    match socket.write_all(&buf[0..resp]).await {
+                        Ok(_) => {
+                            tot_resp += resp as u64;
+                            // println!("Replied {} bytes.", resp)
+                        }
+                        Err(_) => println!("failed to write data to socket"),
+                    };
+                    num -= 1;
+                }
             }
         });
         conn_count += 1;
@@ -163,7 +201,7 @@ pub async fn pressure_ec2(
                         break;
                     }
                 };
-                
+
                 // } else if sum.recv_bytes == sum.send_bytes {
                 //     if stop {
                 //         break;
