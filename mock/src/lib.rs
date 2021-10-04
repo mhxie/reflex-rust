@@ -38,7 +38,7 @@ pub async fn echo_server(addr: &str) -> Result<(), Box<dyn Error>> {
         println!("Conn-{} started", conn_count);
 
         tokio::spawn(async move {
-            let mut buf = vec![0; 65536];
+            let mut buf = vec![0; 65560];
             let mut tot_recv: u64 = 0;
             let mut tot_resp: u64 = 0;
             let start = Instant::now();
@@ -46,18 +46,19 @@ pub async fn echo_server(addr: &str) -> Result<(), Box<dyn Error>> {
                 .read(&mut buf)
                 .await
                 .expect("failed to read data from socket");
+            let mut to_reply: usize = 12;
             let to_recv: usize = match n {
-                // TODO: verify if log2(n) is integer
                 0 => {
                     println!("Got unexpected initial msg.");
                     0
                 }
                 _ => {
-                    println!("New conn configured to {} bytes.", n);
-                    n + 24
+                    println!("New conn configured to {} bytes.", 2_i32.pow(n as u32));
+                    to_reply = n;
+                    2_i32.pow(n as u32) as usize + 24
                 }
             };
-            match socket.write_all(&buf[0..24]).await {
+            match socket.write_all(&buf[0..to_reply]).await {
                 Ok(_) => println!("finished negotiation"),
                 Err(_) => println!("failed to write data to socket"),
             };
