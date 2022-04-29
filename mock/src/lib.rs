@@ -35,6 +35,7 @@ pub async fn echo_server(addr: &str) -> Result<(), Box<dyn Error>> {
     loop {
         // Asynchronously wait for an inbound socket.
         let (mut socket, _) = listener.accept().await?;
+        // socket.set_nodelay(true).expect("set_nodelay call failed");
         println!("Conn-{} started", conn_count);
 
         tokio::spawn(async move {
@@ -78,12 +79,20 @@ pub async fn echo_server(addr: &str) -> Result<(), Box<dyn Error>> {
                         handle_disconnect(start, tot_recv, tot_resp);
                         return;
                     }
+                    m if m == 36 => {
+                        // println!("Received Metadata Request");
+                        41
+                    }, // metadata request
                     h if h % 24 == 0 => {
+                        // println!("Received Get Request");
                         num = h / 24;
                         to_recv
                     }
                     t if t == to_recv => 24,
-                    _ => n,
+                    _ => {
+                        // println!("Received Echo Request - {}", n);
+                        n
+                    },
                 };
 
                 while num != 0 {
