@@ -13,9 +13,10 @@ use tokio::sync::mpsc;
 
 use stat::{average, percentile, Count, Perf};
 
-fn handle_disconnect(start: Instant, tot_recv: u64, tot_resp: u64) {
+fn handle_disconnect(start: Instant, tot_recv: u64, tot_resp: u64, tot_meta_count: u64, tot_resp_count: u64) {
     let duration = start.elapsed();
     if duration.as_secs() != 0 {
+        println!("Replied {} metadata requests & {} data requests", tot_meta_count, tot_resp_count);
         println!(
             "Recv bandwidth: {}Mbps",
             tot_recv / duration.as_secs() / 1024 / 128
@@ -39,9 +40,11 @@ pub async fn echo_server(addr: &str) -> Result<(), Box<dyn Error>> {
         println!("Conn-{} started", conn_count);
 
         tokio::spawn(async move {
-            let mut buf = vec![0; 65560];
+            let mut buf = vec![0; 262168];
             let mut tot_recv: u64 = 0;
             let mut tot_resp: u64 = 0;
+            let mut tot_meta_count: u64 = 0;
+            let mut tot_resp_count: u64 = 0;
             let start = Instant::now();
             let n = socket
                 .read(&mut buf)
@@ -76,23 +79,34 @@ pub async fn echo_server(addr: &str) -> Result<(), Box<dyn Error>> {
                 let resp = match n {
                     0 => {
                         println!("Conn-{} ended", conn_count);
-                        handle_disconnect(start, tot_recv, tot_resp);
+                        handle_disconnect(start, tot_recv, tot_resp, tot_meta_count, tot_resp_count);
                         return;
                     }
-                    m if m == 36 => {
-                        // println!("Received Metadata Request");
+                    m if m % 36 == 0 => {
+                        num = m / 36;
+                        tot_meta_count += num as u64;
+                        // println!("Received Metadata Request, rep 41");
                         41
-                    }, // metadata request
+                    } // metadata request
                     h if h % 24 == 0 => {
-                        // println!("Received Get Request");
+                        // println!("Received Get Request: rep {}", to_recv);
                         num = h / 24;
+                        tot_resp_count += num as u64;
                         to_recv
+                    }
+                    c if c % 60 == 0 => {
+                        // println!("Received Meta+get Request: rep {}", to_recv);
+                        num = c / 60;
+                        tot_meta_count += num as u64;
+                        tot_resp_count += num as u64;
+                        to_recv+41
                     }
                     t if t == to_recv => 24,
                     _ => {
-                        // println!("Received Echo Request - {}", n);
+                        println!("Received Echo Request - {}", n);
+                        tot_resp_count += 1;
                         n
-                    },
+                    }
                 };
 
                 while num != 0 {
